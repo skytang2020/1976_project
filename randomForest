@@ -1,0 +1,45 @@
+train <- read.csv2("C:/Users/Shark/Desktop/1976/Project/New folder/train.csv")
+
+library(mgcv)
+library(corrr)
+library(ggplot2)
+library(FactoMineR)
+library(MASS)
+library(randomForest)
+library(caret)
+sum(is.na(train))
+dim(train)
+train=train[,4:277]
+dim(train)
+train$class=as.factor(train$class)
+attach(train)
+set.seed(9)
+rf.fit=randomForest(train[, -1], train[,1], proximity=TRUE)
+print(rf.fit)
+plot(rf.fit)
+err=rf.fit$err.rate[,1]
+which.min(err)
+#The smallest oob error ntree = 216
+varImpPlot(rf.fit)
+rf.fit$importance
+rf.pred.train=predict(rf.fit,train)
+confusionMatrix(rf.pred.train, train$class)
+
+#Tune mtry
+set.seed(9)
+t=tuneRF(train[, -1], train[,1], 
+         stepFactor = 0.5,
+         plot = TRUE,
+         ntreeTry = 216,
+         trace = TRUE,
+         improve = 0.0005)
+print(t)
+#best mtry=16 for seed 9
+set.seed(9)
+rf.fit2=randomForest(train[, -1], train[,1], proximity=TRUE, mtry = 16, ntree = 216)
+print(rf.fit2)
+plot(rf.fit2)
+varImpPlot(rf.fit2)
+rf.fit2$importance
+rf.pred.train2=predict(rf.fit2,train)
+confusionMatrix(rf.pred.train2, train$class)
