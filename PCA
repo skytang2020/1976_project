@@ -1,0 +1,21 @@
+#PCA Principal component analysis model
+library(ISLR)
+library(corrr)
+library(ggcorrplot)
+library(FactoMineR)
+library(factoextra)
+str(train)
+numerical_data <- train[,2:274]
+head(numerical_data)
+normalized.train=scale(numerical_data)
+head(normalized.train)
+corrmatrix=cor(normalized.train)
+#ggcorrplot(corrmatrix)
+data.pca=princomp(corrmatrix)
+summary(data.pca)
+data.pca$loadings[,1:2]
+
+fviz_eig(data.pca, addlables=TRUE)
+fviz_pca_var(data.pca, col.var = "black")
+fviz_cos2(data.pca, choice = "var", axes = 1:2)
+fviz_cos2(data.pca, choice = "var", top=50)
