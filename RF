@@ -1,6 +1,4 @@
 #random forest model
-train <- read.csv2("C:/Users/Shark/Desktop/1976/Project/New folder/train.csv")
-
 library(mgcv)
 library(corrr)
 library(ggplot2)
@@ -8,11 +6,16 @@ library(FactoMineR)
 library(MASS)
 library(randomForest)
 library(caret)
+
+train <- read.csv("C:/Users/Shark/Desktop/1976/Project/New folder/train.csv")
+
 sum(is.na(train))
 dim(train)
-train=train[,4:277]
+train=train[,3:266]
 dim(train)
 train$class=as.factor(train$class)
+
+#Model with whole train data set
 attach(train)
 set.seed(9)
 rf.fit=randomForest(train[, -1], train[,1], proximity=TRUE)
@@ -20,7 +23,7 @@ print(rf.fit)
 plot(rf.fit)
 err=rf.fit$err.rate[,1]
 which.min(err)
-#The smallest oob error ntree = 216
+#The smallest oob error ntree = 62
 varImpPlot(rf.fit)
 rf.fit$importance
 rf.pred.train=predict(rf.fit,train)
@@ -31,16 +34,70 @@ set.seed(9)
 t=tuneRF(train[, -1], train[,1], 
          stepFactor = 0.5,
          plot = TRUE,
-         ntreeTry = 216,
+         ntreeTry = 62,
          trace = TRUE,
          improve = 0.0005)
 print(t)
 #best mtry=16 for seed 9
 set.seed(9)
-rf.fit2=randomForest(train[, -1], train[,1], proximity=TRUE, mtry = 16, ntree = 216)
+rf.fit2=randomForest(train[, -1], train[,1], proximity=TRUE, mtry = 16, ntree = 62)
 print(rf.fit2)
 plot(rf.fit2)
 varImpPlot(rf.fit2)
 rf.fit2$importance
 rf.pred.train2=predict(rf.fit2,train)
 confusionMatrix(rf.pred.train2, train$class)
+
+
+#Check accuracy with split train data into 8:2
+set.seed(9)
+ind = sample(2,nrow(train),replace = TRUE, prob = c(0.8,0.2))
+trainsub = train[ind==1,]
+testsub= train[ind ==2,]
+set.seed(9)
+rf.fit1=randomForest(trainsub[, -1], trainsub[,1], proximity=TRUE)
+print(rf.fit1)
+plot(rf.fit1)
+err1=rf.fit1$err.rate[,1]
+which.min(err1)
+#The smallest oob error ntree = 242
+varImpPlot(rf.fit1)
+rf.fit1$importance
+rf.pred.trainsub=predict(rf.fit1,trainsub)
+confusionMatrix(rf.pred.trainsub, trainsub$class)
+
+#Tune mtry
+set.seed(9)
+t=tuneRF(trainsub[, -1], trainsub[,1], 
+         stepFactor = 0.5,
+         plot = TRUE,
+         ntreeTry = 242,
+         trace = TRUE,
+         improve = 0.0005)
+print(t)
+#best mtry=64 for seed 9
+set.seed(9)
+rf.fit2=randomForest(trainsub[, -1], trainsub[,1], proximity=TRUE, mtry = 64, ntree = 242)
+print(rf.fit2)
+plot(rf.fit2)
+varImpPlot(rf.fit2)
+rf.fit2$importance
+rf.pred.trainsub2=predict(rf.fit2,trainsub)
+confusionMatrix(rf.pred.trainsub2, trainsub$class)
+#test the model built from trainsub to testsub
+rf.pred.testsub=predict(rf.fit2,testsub)
+confusionMatrix(rf.pred.testsub, testsub$class)
+
+
+
+#Apply the rf to test set
+testorg <- read.csv("C:/Users/Shark/Desktop/1976/Project/project_test set_p.csv")
+test <- read.csv("C:/Users/Shark/Desktop/1976/Project/New folder/test.csv")
+colnames(testorg)
+testorg=testorg[,-2]
+rf.pred.test2=predict(rf.fit2, testorg)
+rf.pred.test2
+colnames(test)
+test=test[,-3]
+rf.pred.test2=predict(rf.fit2, test)
+rf.pred.test2
